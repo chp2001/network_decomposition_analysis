@@ -12,7 +12,7 @@ In this document, we'll be looking at the Version 20.1 CONUS Hydrofabric provide
 
 ## Motivation
 
-![VPU Map](images\vpus_map.png)
+![VPU Map](images/vpus_map.png)
 (From [NOAA-OWP's design spec](https://noaa-owp.github.io/hydrofabric/articles/02-design-deep-dive.html))
 
 When working with the network data for a catchment visualization tool, we were working with an overlay of the VPU borders, and began to wonder how the VPUs were defined. Analysis began as a way of testing a hypothesis that all VPUs were their own subgraphs, and flowed into the same outlet.
@@ -60,7 +60,7 @@ Before we can do any analysis, we need to get the data into a form that we can u
 
 ## Results
 
-![Network Decomposition](images\full_conus.png)
+![Network Decomposition](images/full_conus.png)
 
 ### **Basic Explanation**
 
@@ -79,20 +79,20 @@ There are a lot more red components than expected- given that it should represen
 
 ### **Coastal Oddities**
 
-![Coastal Oddities](images\east_gulf_coast.png)
+![Coastal Oddities](images/east_gulf_coast.png)
 
 West of Florida, there are a few very obvious large components that are not connected to a terminal or coastal nexus, despite being on the coast. This is very strange, and could be indicative of a larger issue with the network.  
 Similarly, this region is representative of the entire coastline, with its very large number of pink "null" catchments. These aren't necessarily concerning on their own, as they provide a more complete picture of the geometry, despite not being necessary for the network analysis. However, the lack of id could easily be causing connectivity issues in and around the coast.
 
 ### **Unintuitive Basin Connectivity**
 
-![Mississippi River Basin](images\mississippi_river_basin.png)
+![Mississippi River Basin](images/mississippi_river_basin.png)
 
 The selected component above, in bright red, is everything leading to the Mississippi River outlet in the network. It obviously does not contain the full Mississippi River and its tributaries, despite the reality of it being a single river. This is a good example of how the network does not seem to fully reflect the real-world hydrology.
 
 ### **West Coast Complexity**
 
-![West Coast](images\west_coast.png)
+![West Coast](images/west_coast.png)
 
 As is apparent in the picture, the west coast is a mess of components, with many of them not connected to a terminal nexus. There are a great many smaller lakes and water bodies that are not connected to the ocean, and each catchment chooses a different outlet, making the region extremely complex and component-dense. It can be very difficult to tell what is actually happening in this region, much less if what is happening is correct.  
 It would be good for a hydrologist to take a closer look at this region, and see if the network is actually correct, or if there are issues with the data.
