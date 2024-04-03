@@ -2,7 +2,7 @@
 
 Author:  
 Chad Perry ([chp2001](https://github.com/chp2001))  
-[CIROH](https://ciroh.ua.edu/) Research Assistant  
+[CIROH](https://ciroh.ua.edu/) Student Assistant  
 University of Alabama  
 4/3/2024
 
