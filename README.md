@@ -32,7 +32,6 @@ When working with the network data for a catchment visualization tool, we were w
     - [**West Coast Complexity**](#west-coast-complexity)
   - [Conclusion](#conclusion)
 
-
 ## Preparation
 
 (If you're uninterested in the technical details, feel free to skip to the [Results](#results) section)
@@ -63,7 +62,7 @@ Before we can do any analysis, we need to get the data into a form that we can u
 
 ![Network Decomposition](images\full_conus.png)
 
-### **Basic Explanation** 
+### **Basic Explanation**
 
 Here is the `QGIS` visualization, with a couple extra color rules:
 
