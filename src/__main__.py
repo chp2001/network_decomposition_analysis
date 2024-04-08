@@ -1,26 +1,19 @@
-from data_processing import create_realization as realization
-from data_processing import file_paths as fp
-from data_processing import forcings, gpkg_utils, graph_utils, subset
 
-file_paths = fp.file_paths
+from file_utils import File_Paths
+import cli_graph_utils as graph_utils
+import cli_wbid_utils as wbid_utils
 
 import os
 import sys
 from datetime import datetime
 from pathlib import Path
 
-import cli.cli_handle as cli_handle
 import time
 # Interface file
 
 arg_options = { # name, description
     "-h": "Prints the help message",
-    "[0]": "The first positional argument, the file path for the given waterbodies",
-    "-s": "Creates a subset of the hydrofabric for the given waterbodies",
-    "-f": "Creates forcing data for the given subset of waterbodies. Optionally can take a second argument for a config file",
-    "-r": "Creates a realization for the given subset of waterbodies. Optionally can take a second argument for a config file",
-    "-t": "Truncates the dataset to a smaller size, either by a ratio or by a number of waterbodies",
-    "--g_tnx": "Generate geopackage of wbs merged by connectivity. No args",
+    "-l_ns": "Gets a list of the last nodes in the hydrofabric for non-terminating subgraphs. No config file needed, overrides need for first positional argument",
 }
 
 supported_filetypes = {
@@ -82,66 +75,21 @@ def get_output_foldername(ids):
     return ids[0]
     
 def main():
-    
-    if "--g_tnx" in sys.argv:
-        cli_handle.gpkg_tnx_interface()
-        return
-    elif "--f" in sys.argv:
-        index = sys.argv.index("--f")
-        filename = sys.argv[index + 1]
-        path = file_paths.root_output_dir() / filename
-        if not path.exists():
-            raise Exception(f"File {path} does not exist")
-        clone_path = file_paths.root_output_dir() / filename.replace(".gpkg", "_clone0.gpkg")
-        clone_path1 = file_paths.root_output_dir() / filename.replace(".gpkg", "_clone1.gpkg")
-        os.system(f"cp {path} {clone_path}")
-        f2_start = time.time()
-        cli_handle._fix_gpkg(file_paths.root_output_dir(), clone_path.name, clone_path1.name)
-        f2_end = time.time()
-        print(f"Fixed file {filename} in {f2_end - f2_start} seconds")
-        return
-    elif "-h" in sys.argv or len(sys.argv) < 2:
+    if "-h" in sys.argv:
         print_help()
         return
-    path, filetype = get_input_wbs()
-    ids = read_input_wbs(path, filetype)
-    target_dir = file_paths.root_output_dir() / get_output_foldername(ids)
-
-    if "-s" in sys.argv:
-        cli_handle.subset_interface(ids)
-    elif not target_dir.exists() and ("-f" in sys.argv or "-r" in sys.argv):
-        raise Exception(f"No subset directory found at {target_dir}")
-    
-    if "-f" in sys.argv:
-        f_ind = sys.argv.index("-f")
-        config = None
-        if len(sys.argv) > f_ind + 1 and sys.argv[f_ind + 1] not in arg_options:
-            config = sys.argv[f_ind + 1]
-        if config is None:
-            config = default_forcing_config
-        config["forcing_dir"] = target_dir.name
-        cli_handle.forcings_interface(ids, config)
-    
-    if "-r" in sys.argv:
-        r_ind = sys.argv.index("-r")
-        config = None
-        if len(sys.argv) > r_ind + 1 and sys.argv[r_ind + 1] not in arg_options:
-            config = sys.argv[r_ind + 1]
-        if config is None:
-            config = default_forcing_config
-        config["forcing_dir"] = target_dir.name
-        cli_handle.realization_interface(ids, config)
-
-    if "-t" in sys.argv:
-        t_ind = sys.argv.index("-t")
-        ratio = None
-        num = None
-        if len(sys.argv) > t_ind + 1 and sys.argv[t_ind + 1] not in arg_options:
-            if "." in sys.argv[t_ind + 1]:
-                ratio = float(sys.argv[t_ind + 1])
-            else:
-                num = int(sys.argv[t_ind + 1])
-        cli_handle.safe_truncate(ids, ratio, num)
+    if "-l_ns" in sys.argv:
+        graph = graph_utils.get_graph()
+        all_wbids = wbid_utils.all_wbids()
+        subgraph_attrs = graph_utils.subgraphs_with_attributes(graph, all_wbids)
+        non_tnx = [s for s in subgraph_attrs if not s[2]["has_tnx"]]
+        non_cnx = [s for s in non_tnx if not s[2]["has_cnx"]]
+        last_nodes = [v for s in non_cnx for v in s[2]["last_node"]]
+        with open(File_Paths.root_output_dir() / "last_nodes.txt", "w") as f:
+            f.write("\n".join(last_nodes))
+        return
+    print("No arguments given, exiting...")
+    return
 
 
 if __name__ == "__main__":

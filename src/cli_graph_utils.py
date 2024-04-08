@@ -231,3 +231,23 @@ def generate_subgraph(graph: ig.Graph, vset: set[int], wbids:set) -> ig.Graph:
     generate_subgraph.cache[graph_hash] = new_graph
     return new_graph
     
+subgraph_attr_checks = {
+    "has_tnx": lambda s, *args, **kwargs: len(s.vs.select(lambda v: "tnx" in v["name"])) > 0,
+    "has_cnx": lambda s, *args, **kwargs: len(s.vs.select(lambda v: "cnx" in v["name"])) > 0,
+    "last_node": lambda s, *args, **kwargs: [v["name"] for v in s.vs.select(lambda v: len(v.successors()) == 0)],
+}
+
+def subgraph_attributes(subgraph: ig.Graph, wbids: set[str]) -> dict:
+    subgraph_attrs = {
+        key: check(subgraph, wbids=wbids) for key, check in subgraph_attr_checks.items()
+    }
+    return subgraph_attrs
+
+def subgraphs_with_attributes(graph: ig.Graph, wbids: set[str]) -> list[tuple[dict]]:
+    subgraphs = graph.decompose(minelements=1, mode="weak")
+    # print(f"Subgraphs: {len(subgraphs)}")
+    subgraph_data = []
+    for i, subgraph in enumerate(subgraphs):
+        # print(f"Subgraph {i}")
+        subgraph_data.append((i, subgraph, subgraph_attributes(subgraph, wbids)))
+    return subgraph_data

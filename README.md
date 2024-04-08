@@ -30,6 +30,7 @@ When working with the network data for a catchment visualization tool, we were w
     - [**Coastal Oddities**](#coastal-oddities)
     - [**Unintuitive Basin Connectivity**](#unintuitive-basin-connectivity)
     - [**West Coast Complexity**](#west-coast-complexity)
+    - [**Final WBIDs in Non-Terminal Components**](#final-wbids-in-non-terminal-components)
   - [Conclusion](#conclusion)
 
 ## Preparation
@@ -96,6 +97,27 @@ The selected component above, in bright red, is everything leading to the Missis
 
 As is apparent in the picture, the west coast is a mess of components, with many of them not connected to a terminal nexus. There are a great many smaller lakes and water bodies that are not connected to the ocean, and each catchment chooses a different outlet, making the region extremely complex and component-dense. It can be very difficult to tell what is actually happening in this region, much less if what is happening is correct.  
 It would be good for a hydrologist to take a closer look at this region, and see if the network is actually correct, or if there are issues with the data.
+
+### **Final WBIDs in Non-Terminal Components**
+
+Running the included `src/__main__.py` script will output a list to `output/last_nodes.txt` of the final WBID (No successors) in each non-terminal component. This can be useful for identifying the final catchment in a component, and seeing if it is in a reasonable location, and if there is an obvious terminal nexus that it should be connected to.  
+Here is a sample output, the first 13 out of 589:
+  
+  ```csv
+  wb-1000005605
+  wb-1000005236
+  wb-1000005600
+  wb-1000006984
+  wb-1000009447
+  wb-1000012871
+  wb-1000013603
+  wb-1000012770
+  wb-1000011521
+  wb-1000006990
+  wb-1000013585
+  wb-1000009147
+  wb-1000006972
+  ```
 
 ## Conclusion
 
