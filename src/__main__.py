@@ -85,6 +85,7 @@ def main():
         non_tnx = [s for s in subgraph_attrs if not s[2]["has_tnx"]]
         non_cnx = [s for s in non_tnx if not s[2]["has_cnx"]]
         last_nodes = [v for s in non_cnx for v in s[2]["last_node"]]
+        last_nodes.sort()
         with open(File_Paths.root_output_dir() / "last_nodes.txt", "w") as f:
             f.write("\n".join(last_nodes))
         return

@@ -63,7 +63,7 @@ Before we can do any analysis, we need to get the data into a form that we can u
 
    1. Fulfill the requirements in `requirements.txt`.
 
-   2. Have the version 20.1 `conus.gpkg` from Lynker-Spatial in the `data` directory.
+   2. Have the version 20.1 `conus.gpkg` from Lynker-Spatial [here](https://www.lynker-spatial.com/) in the `data` directory.
 
    3. Run the `src/__main__.py` script.
 
@@ -109,23 +109,7 @@ It would be good for a hydrologist to take a closer look at this region, and see
 ### **Final WBIDs in Non-Terminal Components**
 
 Running the included `src/__main__.py` script will output a list to `output/last_nodes.txt` of the final WBID (No successors) in each non-terminal component. This can be useful for identifying the final catchment in a component, and seeing if it is in a reasonable location, and if there is an obvious terminal nexus that it should be connected to.  
-Here is a sample output, the first 13 out of 589:
-  
-  ```csv
-  wb-1000005605
-  wb-1000005236
-  wb-1000005600
-  wb-1000006984
-  wb-1000009447
-  wb-1000012871
-  wb-1000013603
-  wb-1000012770
-  wb-1000011521
-  wb-1000006990
-  wb-1000013585
-  wb-1000009147
-  wb-1000006972
-  ```
+Most recent run: [last_nodes.md](output/last_nodes.md)
 
 ## Conclusion
 
