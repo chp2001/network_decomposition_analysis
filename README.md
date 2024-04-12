@@ -109,7 +109,7 @@ It would be good for a hydrologist to take a closer look at this region, and see
 ### **Final WBIDs in Non-Terminal Components**
 
 Running the included `src/__main__.py` script will output a list to `output/last_nodes.txt` of the final WBID (No successors) in each non-terminal component. This can be useful for identifying the final catchment in a component, and seeing if it is in a reasonable location, and if there is an obvious terminal nexus that it should be connected to.  
-Most recent run: [last_nodes.md](output/last_nodes.md)
+Most recent run: [last_nodes.md](last_nodes.md)
 
 ## Conclusion
 
