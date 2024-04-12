@@ -78,7 +78,7 @@ def main():
     if "-h" in sys.argv:
         print_help()
         return
-    if "-l_ns" in sys.argv:
+    if "-l_ns" in sys.argv or True:
         graph = graph_utils.get_graph()
         all_wbids = wbid_utils.all_wbids()
         subgraph_attrs = graph_utils.subgraphs_with_attributes(graph, all_wbids)

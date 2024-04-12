@@ -59,6 +59,14 @@ Before we can do any analysis, we need to get the data into a form that we can u
   
 5. **Visualization**: We could use the `geopandas` library to visualize the resulting geometries, but since the geometry is too complex for `matplotlib` or other libraries, we'll instead output the data to a geopackage, and visualize it in `QGIS`.
 
+6. **(Optional) Running The Script**: The included scripts contain most of the code necessary to perform the overall analysis, but the `__main__.py` script, by default, is only set up to generate the data used in the [Final WBIDs in Non-Terminal Components](#final-wbids-in-non-terminal-components) section. To run it, you will need to:
+
+   1. Fulfill the requirements in `requirements.txt`.
+
+   2. Have the version 20.1 `conus.gpkg` from Lynker-Spatial in the `data` directory.
+
+   3. Run the `src/__main__.py` script.
+
 ## Results
 
 ![Network Decomposition](images/full_conus.png)
