@@ -88,14 +88,14 @@ Similarly, this region is representative of the entire coastline, with its very 
 
 ![Mississippi River Basin](images/mississippi_river_basin.png)
 
-The selected component above, in bright red, is everything leading to the Mississippi River outlet in the network. It obviously does not contain the full Mississippi River and its tributaries, despite the reality of it being a single river. This is a good example of how the network does not seem to fully reflect the real-world hydrology.
+The selected component above, in bright red, is everything leading to the Mississippi River outlet in the network. The polygon should fully contain the entire Mississippi River drainage and its tributaries, but only contains a portion of the Red River and other areas of the lower Mississippi. This is a good example of how the network does not seem to fully reflect the real-world hydro-topology.
 
 ### **West Coast Complexity**
 
 ![West Coast](images/west_coast.png)
 
-As is apparent in the picture, the west coast is a mess of components, with many of them not connected to a terminal nexus. There are a great many smaller lakes and water bodies that are not connected to the ocean, and each catchment chooses a different outlet, making the region extremely complex and component-dense. It can be very difficult to tell what is actually happening in this region, much less if what is happening is correct.  
-It would be good for a hydrologist to take a closer look at this region, and see if the network is actually correct, or if there are issues with the data.
+As expected and as apparent in the picture, the western portion of the network containes many closed basins. However, many of these are not connected to a terminal nexus, which is probably an error and is certainly inconsistent. Because of this high density of disconnected closed systems, the region is extremely complex and component-dense and it can be very difficult to tell what is actually happening in this region, much less if what is happening is correct.  
+This area will need careful review by a hydrologist familiar with the region to see if the network is correct, or to identify specific issues with the data.
 
 ## Conclusion
 
