@@ -74,7 +74,7 @@ Here is the `QGIS` visualization, with a couple extra color rules:
 
 ### **Initial Observations**
 
-The VPU connectivity hypothesis is obviously completely wrong. Within each VPU, there are many subgraphs, and some subgraphs even span multiple VPUs. This lends credence to the idea that the VPUs are somewhat arbitrary, and that they are not derived from the network itself.  
+The VPU connectivity is obviously not fully represented in the hydrofabric as it stands. Within each VPU, there are many subgraphs, and some subgraphs even span multiple VPUs. Naively, this would make it appear that the VPUs are arbitrary, and that they are not derived from the network itself (or even from the same base data).  
 There are a lot more red components than expected- given that it should represent an "error state" when a component is not flowing to a terminal nexus. This could be small errors in the network, issues with nexus placement, or an error in the data processing we did. Either way, 6.5% of the network is not connected to a terminal nexus, which is a significant amount.
 
 ### **Coastal Oddities**
