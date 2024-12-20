@@ -2,6 +2,7 @@ import sys
 import os
 from pathlib import Path
 
+
 class File_Paths:
     @staticmethod
     def data_sources() -> Path:

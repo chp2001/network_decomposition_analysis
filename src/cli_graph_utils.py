@@ -137,7 +137,8 @@ def process_upstream_id(
         if nm not in to_wbs:
             to_wbs[nm] = [next["name"] for next in nex.successors()]
 
-def wbids_groupby_component(ids: list[str]):# -> list[set[str]]:
+
+def wbids_groupby_component(ids: list[str]):  # -> list[set[str]]:
     graph = get_graph()
     verts = [graph.vs.find(name=id) for id in ids]
     print(f"{len(ids)} ids -> {len(verts)} vertices")
@@ -164,7 +165,8 @@ def wbids_groupby_component(ids: list[str]):# -> list[set[str]]:
     # return tnx_subgraphs_named
     return subgraphs_named
 
-def generate_subgraph(graph: ig.Graph, vset: set[int], wbids:set) -> ig.Graph:
+
+def generate_subgraph(graph: ig.Graph, vset: set[int], wbids: set) -> ig.Graph:
     graph_hash = str(len(graph.vs)) + str(len(graph.es)) + str(id(graph))
     if hasattr(generate_subgraph, "cache") and graph_hash in generate_subgraph.cache:
         return generate_subgraph.cache[graph_hash]
@@ -183,7 +185,7 @@ def generate_subgraph(graph: ig.Graph, vset: set[int], wbids:set) -> ig.Graph:
     edges = []
     for v in verts:
         nexi = v.successors()
-        
+
         next_verts = set()
         for n in nexi:
             next_wbs = n.successors()
@@ -214,15 +216,15 @@ def generate_subgraph(graph: ig.Graph, vset: set[int], wbids:set) -> ig.Graph:
     print(f"Original: {original_verts} vertices, {original_edges} edges")
     print(f"Final: {final_verts} vertices, {final_edges} edges")
     # for i, v in enumerate(vset):
-        
-        #/succ = [s for s in graph.vs[v].successors() if s.index in vnames]
-        # pred = [s for s in graph.vs[v].predecessors() if s.index in vnames]
-        #/edges.extend([(vnew_ids[v], vnew_ids[s.index]) for s in succ])
-        # edges.extend([(vnew_ids[v], vnew_ids[s.index]) for s in graph.vs[v].successors() if s.index in vnames])
-        # edges.extend([(vnew_ids[s.index], vnew_ids[v]) for s in graph.vs[v].predecessors() if s.index in vnames and not vtouched[s.index]])
-        # print(f"Adding edges: i:{percent(i)}, len: {len(edges)}", end="\r")#. S({len(new_graph.subcomponent(vnew_ids[v], 'all'))})",end="\r")
-        # vtouched[v] = True
-        # edges.extend([(vnew_ids[v], vnew_ids[s.index]) for s in graph.vs[v].successors() if s.index in vnames])
+
+    # /succ = [s for s in graph.vs[v].successors() if s.index in vnames]
+    # pred = [s for s in graph.vs[v].predecessors() if s.index in vnames]
+    # /edges.extend([(vnew_ids[v], vnew_ids[s.index]) for s in succ])
+    # edges.extend([(vnew_ids[v], vnew_ids[s.index]) for s in graph.vs[v].successors() if s.index in vnames])
+    # edges.extend([(vnew_ids[s.index], vnew_ids[v]) for s in graph.vs[v].predecessors() if s.index in vnames and not vtouched[s.index]])
+    # print(f"Adding edges: i:{percent(i)}, len: {len(edges)}", end="\r")#. S({len(new_graph.subcomponent(vnew_ids[v], 'all'))})",end="\r")
+    # vtouched[v] = True
+    # edges.extend([(vnew_ids[v], vnew_ids[s.index]) for s in graph.vs[v].successors() if s.index in vnames])
     # new_graph.add_edges(edges)
     # print(f"Added edges: {percent(total)}")
     # print(f"Vertices touched: {sum(vtouched.values())}/{total}")
@@ -230,18 +232,25 @@ def generate_subgraph(graph: ig.Graph, vset: set[int], wbids:set) -> ig.Graph:
         generate_subgraph.cache = {}
     generate_subgraph.cache[graph_hash] = new_graph
     return new_graph
-    
+
+
 subgraph_attr_checks = {
-    "has_tnx": lambda s, *args, **kwargs: len(s.vs.select(lambda v: "tnx" in v["name"])) > 0,
-    "has_cnx": lambda s, *args, **kwargs: len(s.vs.select(lambda v: "cnx" in v["name"])) > 0,
-    "last_node": lambda s, *args, **kwargs: [v["name"] for v in s.vs.select(lambda v: len(v.successors()) == 0)],
+    "has_tnx": lambda s, *args, **kwargs: len(s.vs.select(lambda v: "tnx" in v["name"]))
+    > 0,
+    "has_cnx": lambda s, *args, **kwargs: len(s.vs.select(lambda v: "cnx" in v["name"]))
+    > 0,
+    "last_node": lambda s, *args, **kwargs: [
+        v["name"] for v in s.vs.select(lambda v: len(v.successors()) == 0)
+    ],
 }
+
 
 def subgraph_attributes(subgraph: ig.Graph, wbids: set[str]) -> dict:
     subgraph_attrs = {
         key: check(subgraph, wbids=wbids) for key, check in subgraph_attr_checks.items()
     }
     return subgraph_attrs
+
 
 def subgraphs_with_attributes(graph: ig.Graph, wbids: set[str]) -> list[tuple[dict]]:
     subgraphs = graph.decompose(minelements=1, mode="weak")

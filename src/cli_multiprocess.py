@@ -33,6 +33,7 @@ import atexit
 # Because we can't rely on the Pool from multiprocessing, we will have to manage the workers
 # ourselves.
 
+
 ### Utility before class definitions
 ### Making lambdas pickleable
 # CodeType __new__ method
@@ -71,7 +72,7 @@ import atexit
 #     ) -> Self: ...
 # The LambdaType object requires a CodeType object to be created
 # Closure is not necessary, and can be ignored
-def make_code_picklable(code:CodeType)->dict:
+def make_code_picklable(code: CodeType) -> dict:
     data = {
         "argcount": code.co_argcount,
         "posonlyargcount": code.co_posonlyargcount,
@@ -88,24 +89,22 @@ def make_code_picklable(code:CodeType)->dict:
         "firstlineno": code.co_firstlineno,
         "linetable": code.co_lnotab,
         "freevars": code.co_freevars,
-        "cellvars": code.co_cellvars
+        "cellvars": code.co_cellvars,
     }
     data["type"] = "codetype"
     return data
-def make_lambda_picklable(lam:Callable)->dict:
+
+
+def make_lambda_picklable(lam: Callable) -> dict:
     code_obj = lam.__code__
     code_dict = make_code_picklable(code_obj)
     name = lam.__name__
     argdefs = lam.__defaults__
-    data = {
-        "type": "lambda",
-        "code": code_dict,
-        "name": name,
-        "argdefs": argdefs
-    }
+    data = {"type": "lambda", "code": code_dict, "name": name, "argdefs": argdefs}
     return data
 
-def make_code_from_dict(data:dict)->CodeType:
+
+def make_code_from_dict(data: dict) -> CodeType:
     if not data.get("type") == "codetype":
         raise ValueError("Data is not a code type")
     return CodeType(
@@ -124,21 +123,18 @@ def make_code_from_dict(data:dict)->CodeType:
         data["firstlineno"],
         data["linetable"],
         data["freevars"],
-        data["cellvars"]
+        data["cellvars"],
     )
-def make_lambda_from_dict(data:dict)->Callable:
+
+
+def make_lambda_from_dict(data: dict) -> Callable:
     # if not data.get("type") == "lambda":
     #     return default_dict_dispatch(data)
     code_dict = data["code"]
     code_obj = make_code_from_dict(code_dict)
     name = data["name"]
     argdefs = data["argdefs"]
-    return LambdaType(
-        code_obj,
-        globals(),
-        name,
-        argdefs
-    )
+    return LambdaType(code_obj, globals(), name, argdefs)
 
 
 ## Worker Class: Smallest unit, stores information and manages a single worker process
@@ -146,7 +142,7 @@ def make_lambda_from_dict(data:dict)->Callable:
 # when a task is received.
 # Additionally, stores state information and statistics on the worker process
 class Worker:
-    def __init__(self, worker_id:int, output_folder:Path):
+    def __init__(self, worker_id: int, output_folder: Path):
         self.worker_id = worker_id
         self.transfer_path = output_folder / f"worker_{worker_id}.pickle"
         self.stats = {
@@ -155,7 +151,7 @@ class Worker:
                 "end": None,
                 "last": None,
                 "last_dur": None,
-                "idle": 0
+                "idle": 0,
             }
         }
         self.state = "idle"
@@ -182,7 +178,7 @@ class Worker:
         self.do_timing()
         self.initialized = True
 
-    def run(self, conn_child:Connection):
+    def run(self, conn_child: Connection):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         this_process = psutil.Process()
         parent = this_process.parent()
@@ -205,7 +201,7 @@ class Worker:
         conn_child.close()
         this_process.terminate()
 
-    def process_task(self, task, conn_child:Connection):
+    def process_task(self, task, conn_child: Connection):
         if isinstance(task, str):
             task = json.loads(task)
         elif isinstance(task, bytes):
@@ -226,12 +222,14 @@ class Worker:
         else:
             conn_child.send(pickle.dumps(_ret))
 
-    def send_task(self, args:dict):
-        #Ensure we never send more than 32MiB of data over the pipe
+    def send_task(self, args: dict):
+        # Ensure we never send more than 32MiB of data over the pipe
         _data = pickle.dumps(args["data"])
         if isinstance(args["func"], dict):
             args["func"] = make_lambda_from_dict(args["func"])
-        if isinstance(args["func"], Callable) and "lambda" in args["func"].__name__: #Lambda functions are not pickleable
+        if (
+            isinstance(args["func"], Callable) and "lambda" in args["func"].__name__
+        ):  # Lambda functions are not pickleable
             args["func"] = make_lambda_picklable(args["func"])
         self.taskdata = {}
         if sys.getsizeof(_data) > 4 * 1024 * 1024:
@@ -264,7 +262,7 @@ class Worker:
             self.stop()
             raise Exception("Error in getting return")
         return rets
-    
+
     def reset(self):
         self.state = "idle"
         self.stats["timing"]["start"] = None
@@ -286,14 +284,14 @@ class Worker:
         if self.process is None:
             return False
         return self.process.is_alive()
-    
+
     def poll(self):
         if self.process is None:
             return False
         if self.taskdata is None:
             return False
         return self.conn_parent.poll()
-    
+
     def terminate(self):
         if self.process is not None:
             self.process.terminate()
@@ -303,25 +301,21 @@ class Worker:
             self.initialized = False
             self.reset()
 
+
 test_worker = False
 if __name__ == "__main__" and test_worker:
     output_folder = os.path.join(os.path.dirname(__file__), "output")
     worker = Worker(1, Path(output_folder))
     worker.start()
-    worker.send_task({
-        "func": sum,
-        "data": [[i for i in range(10000)]]
-    })
+    worker.send_task({"func": sum, "data": [[i for i in range(10000)]]})
     print(worker.get_return())
 
     for i in range(10):
-        worker.send_task({
-            "func": sum,
-            "data": [[i for i in range(10000)]]
-        })
+        worker.send_task({"func": sum, "data": [[i for i in range(10000)]]})
         print(worker.get_return())
     worker.stop()
     print("Worker stopped")
+
 
 ## WorkerManager Class: Manages a set of workers, and distributes tasks to them
 # The WorkerManager class is responsible for managing a set of workers.
@@ -330,12 +324,13 @@ if __name__ == "__main__" and test_worker:
 # as they become available.
 class WorkerManager:
     _instances = {}
-    def __new__(cls, uuid:str, *args, **kwargs):
+
+    def __new__(cls, uuid: str, *args, **kwargs):
         if uuid not in cls._instances:
             cls._instances[uuid] = super().__new__(cls)
         return cls._instances[uuid]
-    
-    def __init__(self, uuid:str, output_folder:Path, num_workers:int=cpu_count()):
+
+    def __init__(self, uuid: str, output_folder: Path, num_workers: int = cpu_count()):
         self.uuid = uuid
         self.output_folder = output_folder
         self.num_workers = num_workers
@@ -354,49 +349,45 @@ class WorkerManager:
         for worker in self.workers:
             worker.start()
 
-    def send_task(self, func:Callable, *args, data=None, **kwargs):
-        if "<lambda>" in func.__name__: #Lambda functions are not pickleable
+    def send_task(self, func: Callable, *args, data=None, **kwargs):
+        if "<lambda>" in func.__name__:  # Lambda functions are not pickleable
             func = make_lambda_picklable(func)
-        self.task_queue.put({
-            "func": func,
-            "args": args,
-            "kwargs": kwargs,
-            "data": data
-        })
+        self.task_queue.put(
+            {"func": func, "args": args, "kwargs": kwargs, "data": data}
+        )
         self.task_count += 1
 
-    def send_task_chunk(self, func:Callable, dataset:list, chunk_size:int=1000):
+    def send_task_chunk(self, func: Callable, dataset: list, chunk_size: int = 1000):
         for i in range(0, len(dataset), chunk_size):
-            self.send_task(func, dataset[i:i+chunk_size])
+            self.send_task(func, dataset[i : i + chunk_size])
 
     def get_status(self):
         data = {
             "task_count": self.task_count,
             "task_data": self.task_data,
             "task_stats": self.task_stats,
-            "worker_status": {}
+            "worker_status": {},
         }
         for i, worker in enumerate(self.workers):
-            data["worker_status"][i] = {
-                "state": worker.state,
-                "stats": worker.stats
-            }
+            data["worker_status"][i] = {"state": worker.state, "stats": worker.stats}
         return data
-    
+
     def distribute(self):
         try:
             _i = 0
             last_done = 0
             while self.task_count > self.tasks_done:
                 for worker in self.workers:
-                    if worker.state == "idle" and not self.task_queue.empty() and worker.taskdata is None:
+                    if (
+                        worker.state == "idle"
+                        and not self.task_queue.empty()
+                        and worker.taskdata is None
+                    ):
                         task = self.task_queue.get()
                         worker.send_task(task)
                         self.task_data[self.tasks_sent] = (worker.worker_id,)
                         self.worker_tasks[worker.worker_id] = self.tasks_sent
-                        self.task_stats[worker.worker_id] = {
-                            "start": time.time()
-                        }
+                        self.task_stats[worker.worker_id] = {"start": time.time()}
                         self.tasks_sent += 1
                         # break
                 for worker in self.workers:
@@ -425,7 +416,7 @@ class WorkerManager:
             print(f"Error in distributing tasks: {e}")
             self.terminate()
             raise e
-    
+
     def stop(self):
         for worker in self.workers:
             worker.stop()
@@ -451,6 +442,7 @@ class WorkerManager:
         self.tasks_sent = 0
         self.tasks_done = 0
 
+
 test_worker_manager = True
 if __name__ == "__main__" and test_worker_manager:
     output_folder = os.path.join(os.path.dirname(__file__), "output")
@@ -468,24 +460,3 @@ if __name__ == "__main__" and test_worker_manager:
     print([len(v) for k, v in wm.task_return.items()])
     wm.stop()
     print("Worker Manager stopped")
-
-
-
-            
-            
-            
-    
-
-
-
-    
-
-
-
-
-
-
-
-
-
-    

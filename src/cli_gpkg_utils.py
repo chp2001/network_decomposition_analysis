@@ -2,7 +2,7 @@ import logging
 import sqlite3
 from functools import cache
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import geopandas as gpd
 
@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 def copy_rTree_tables(
-    table: str, ids: List[str], source_db: sqlite3.Connection, dest_db: sqlite3.Connection
+    table: str,
+    ids: List[str],
+    source_db: sqlite3.Connection,
+    dest_db: sqlite3.Connection,
 ) -> None:
     """
     Copy rTree tables from source database to destination database.
@@ -25,7 +28,9 @@ def copy_rTree_tables(
         source_db (sqlite3.Connection): The source database connection.
         dest_db (sqlite3.Connection): The destination database connection.
     """
-    rTree_tables = [f"rtree_{table}_geom{suffix}" for suffix in ["", "_rowid", "_node", "_parent"]]
+    rTree_tables = [
+        f"rtree_{table}_geom{suffix}" for suffix in ["", "_rowid", "_node", "_parent"]
+    ]
 
     rowid_data = source_db.execute(
         f"SELECT * FROM {rTree_tables[1]} WHERE rowid in ({','.join(ids)})"
@@ -63,7 +68,9 @@ def insert_data(con: sqlite3.Connection, table: str, contents: List[Tuple]) -> N
     con.commit()
 
 
-def subset_table(table: str, ids: List[str], hydrofabric: str, subset_gpkg_name: str) -> None:
+def subset_table(
+    table: str, ids: List[str], hydrofabric: str, subset_gpkg_name: str
+) -> None:
     """
     Subset the specified table from the hydrofabric database and save it to the subset geopackage.
 
@@ -104,6 +111,7 @@ def subset_table(table: str, ids: List[str], hydrofabric: str, subset_gpkg_name:
     source_db.close()
     dest_db.close()
 
+
 def blob_to_geometry(blob):
     # from http://www.geopackage.org/spec/#gpb_format
     # byte 0-2 don't need
@@ -123,7 +131,8 @@ def blob_to_geometry(blob):
     geometry = loads(geom)
     return geometry
 
-def get_geom_from_wbids_map(wbids: List[str], func = lambda x: x) -> dict:
+
+def get_geom_from_wbids_map(wbids: List[str], func=lambda x: x) -> dict:
     """
     Get the geometry from the specified wbids, using the specified function.
 
@@ -147,11 +156,12 @@ def get_geom_from_wbids_map(wbids: List[str], func = lambda x: x) -> dict:
             wb_results[d[0]] = func(blob_to_geometry(d[1]))
             # print(f"Got geometry: {wb_centroids[d[0]]}",end="\r")
         except Exception as e:
-            print(f"Error getting geometry for {d[0]}: {e}",end="\r")
+            print(f"Error getting geometry for {d[0]}: {e}", end="\r")
             logger.error(f"Error getting geometry for {d[0]}: {e}")
             raise e
     # raise Exception(wb_centroids)
     return wb_results
+
 
 def get_points_from_wbids(wbids: List[str]) -> dict:
     """
@@ -166,9 +176,6 @@ def get_points_from_wbids(wbids: List[str]) -> dict:
     return get_geom_from_wbids_map(wbids, lambda x: x.centroid)
 
 
-
-
-
 def remove_triggers(dest_db: str) -> List[Tuple]:
     """
     Remove triggers from the specified database.
@@ -180,7 +187,9 @@ def remove_triggers(dest_db: str) -> List[Tuple]:
         List[(t_name, t_sql)]: The list of triggers that were removed.
     """
     con = sqlite3.connect(dest_db)
-    triggers = con.execute("SELECT name, sql FROM sqlite_master WHERE type = 'trigger'").fetchall()
+    triggers = con.execute(
+        "SELECT name, sql FROM sqlite_master WHERE type = 'trigger'"
+    ).fetchall()
 
     for trigger in triggers:
         con.execute(f"DROP TRIGGER {trigger[0]}")
@@ -214,3 +223,50 @@ def get_vpu_gdf():
     )
     vpu_boundaries = vpu_boundaries.to_crs(epsg=4326)
     return vpu_boundaries
+
+
+def make_template_gpkg() -> None:
+    """
+    Create a template geopackage by reading in the conus hydrofabric, dropping the data, and saving it as a new file.
+    """
+    template = File_Paths.template_gpkg()
+    if not template.exists():
+        template.parent.mkdir(parents=True, exist_ok=True)
+        conus = File_Paths.conus_hydrofabric()
+        conus = gpd.read_file(conus, layer="network", driver="GPKG")
+        conus = conus[0:0]
+        conus.to_file(template, driver="GPKG")
+
+
+def create_gpkg(pkg_path: str) -> None:
+    template = File_Paths.template_gpkg()
+    if not template.exists():
+        make_template_gpkg()
+    template = gpd.read_file(template, driver="GPKG")
+    template.to_file(pkg_path, driver="GPKG")
+    print(f"Created geopackage at {pkg_path}")
+
+
+def cleanup_gpkg(pkg_path: str) -> None:
+    """
+    Clean up the specified geopackage by removing the triggers and rebuilding the spatial index.
+
+    Args:
+        pkg_path (str): The path to the geopackage.
+    """
+    remove_triggers(pkg_path)
+
+
+def insert_data_gpkg(pkg_path: str, data: Union[gpd.GeoDataFrame], table: str) -> None:
+    """
+    Insert data into the specified geopackage.
+
+    Args:
+        pkg_path (str): The path to the geopackage.
+        data (gpd.GeoDataFrame): The data to be inserted.
+        table (str): The table name.
+    """
+    if isinstance(data, dict):
+        data = gpd.GeoDataFrame(data)
+    data.to_file(pkg_path, layer=table, driver="GPKG")
+    print(f"Done inserting data into {table}")

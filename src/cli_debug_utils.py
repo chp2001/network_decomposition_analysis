@@ -1,10 +1,24 @@
 import sys, sqlite3
 from pathlib import Path
-from typing import List, Tuple, Dict, Any, Union
+from typing import (
+    List,
+    Tuple,
+    Dict,
+    Set,
+    Any,
+    Union,
+    Callable,
+    Literal,
+    Optional,
+    TypeVar,
+    TypedDict,
+    Iterable,
+    NamedTuple,
+)
 from functools import cache
 import multiprocessing as mp
 
-#Plotting
+# Plotting
 import matplotlib.pyplot as plt
 import random
 import math
@@ -16,6 +30,7 @@ from shapely.geometry import Polygon, MultiPolygon
 ## Profiling
 # import tracemalloc
 import linecache
+
 # from resource import getrusage, RUSAGE_SELF, RUSAGE_CHILDREN
 from datetime import datetime
 from queue import Queue, Empty
@@ -29,11 +44,12 @@ from file_utils import File_Paths
 ONCE = (True,)
 RENDER = False
 
-def debug_render_partitions(postfix:str, parts:list, bounds:tuple):
+
+def debug_render_partitions(postfix: str, parts: list, bounds: tuple):
     if not RENDER:
         return
     fig, ax = plt.subplots()
-    #ensure shapes are visible
+    # ensure shapes are visible
     f_width = bounds[2] - bounds[0]
     f_height = bounds[3] - bounds[1]
     # print(f"Bounds: {bounds}")
@@ -52,7 +68,12 @@ def debug_render_partitions(postfix:str, parts:list, bounds:tuple):
         assert b[0] < b[2]
         assert b[1] < b[3]
         xmin, ymin, xmax, ymax = b
-        xmin, ymin, xmax, ymax = scaled_x(xmin), scaled_y(ymin), scaled_x(xmax), scaled_y(ymax)
+        xmin, ymin, xmax, ymax = (
+            scaled_x(xmin),
+            scaled_y(ymin),
+            scaled_x(xmax),
+            scaled_y(ymax),
+        )
         width = xmax - xmin
         height = ymax - ymin
         # print(f"Adding rectangle: {xmin}, {ymin}, {width}, {height}")
@@ -62,60 +83,76 @@ def debug_render_partitions(postfix:str, parts:list, bounds:tuple):
         # yoffset = height * 0.05
         # width -= xoffset
         # height -= yoffset
-        #fill with random color
+        # fill with random color
         face_color = (random.random(), random.random(), random.random(), 0.2)
         edge_color = (0, 0, 0, 0.5)
-        rect = plt.Rectangle((
-            xmin + xoffset, ymin + yoffset
-        ), width, height, facecolor=face_color, edgecolor=edge_color, alpha=0.5)
+        rect = plt.Rectangle(
+            (xmin + xoffset, ymin + yoffset),
+            width,
+            height,
+            facecolor=face_color,
+            edgecolor=edge_color,
+            alpha=0.5,
+        )
         ax.add_patch(rect)
     plt.savefig(File_Paths.root_output_dir() / f"partition_{postfix}.png")
 
-def debug_create_fig_grid(num:int)->tuple:
+
+def debug_create_fig_grid(num: int) -> tuple:
     if not RENDER:
         return None, None
     cols = num
     rows = 1
     if num > 4 and 4**2 >= num:
-        #Fill out the 4x4 grid
+        # Fill out the 4x4 grid
         cols = 4
         rows = math.ceil(num / 4)
     elif num > 4**2:
-        #Try to keep roughly square
+        # Try to keep roughly square
         cols = math.ceil(math.sqrt(num))
         rows = math.ceil(num / cols)
     fig, axs = plt.subplots(rows, cols)
     return fig, axs
 
-def debug_render_subplot(axs, ind, parts:list, bounds:tuple, postfix:str=""):
-    if postfix=="":
+
+def debug_render_subplot(axs, ind, parts: list, bounds: tuple, postfix: str = ""):
+    if postfix == "":
         postfix = f"_{ind}"
     if not RENDER:
         return
     ax = axs[ind]
     ax.set_xlim(bounds[0], bounds[2])
     ax.set_ylim(bounds[1], bounds[3])
-    ax.set_aspect('equal', adjustable='box')
+    ax.set_aspect("equal", adjustable="box")
     for p in parts:
         b = p[1]
         assert b[0] < b[2]
         assert b[1] < b[3]
         face_color = (random.random(), random.random(), random.random(), 0.2)
         edge_color = (0, 0, 0, 0.5)
-        rect = plt.Rectangle(b[:2], b[2] - b[0], b[3] - b[1], facecolor=face_color, edgecolor=edge_color, alpha=0.5)
+        rect = plt.Rectangle(
+            b[:2],
+            b[2] - b[0],
+            b[3] - b[1],
+            facecolor=face_color,
+            edgecolor=edge_color,
+            alpha=0.5,
+        )
         ax.add_patch(rect)
     ax.set_title(postfix)
     return ax
 
-def debug_process_and_show_fig(fig, axs, postfix:str):
+
+def debug_process_and_show_fig(fig, axs, postfix: str):
     if not RENDER:
         return
     for ax in axs:
-        ax.axis('off')
+        ax.axis("off")
     plt.savefig(File_Paths.root_output_dir() / f"partition_{postfix}.png")
     # plt.show()
 
-def debug_geoplot_geom(geom, bounds:tuple=None):
+
+def debug_geoplot_geom(geom, bounds: tuple = None, filename: str = "geom_plot.png"):
     geoms = []
     if isinstance(geom, list):
         for g in geom:
@@ -132,10 +169,7 @@ def debug_geoplot_geom(geom, bounds:tuple=None):
         else:
             _geoms.append(g)
     geoms = _geoms
-    data = {
-        "geometry": geoms,
-        "dummy": [1 for _ in geoms]
-    }
+    data = {"geometry": geoms, "dummy": [1 for _ in geoms]}
     df = gpd.GeoDataFrame(data, geometry="geometry", crs="EPSG:5070")
     df.to_crs("EPSG:4326", inplace=True)
     bounds = df.total_bounds
@@ -143,20 +177,21 @@ def debug_geoplot_geom(geom, bounds:tuple=None):
     # print(f"Geoms: {geoms}")
     ax = gplt.polyplot(
         df,
-        edgecolor='black',
+        edgecolor="black",
         linewidth=1,
-        facecolor='red',
+        facecolor="red",
         figsize=(10, 10),
-        extent=bounds
-        )
-    output_path = File_Paths.root_output_dir() / "plots" / "geom_plot.png"
-    #verify the output path exists
+        extent=bounds,
+    )
+    output_path = File_Paths.root_output_dir() / "plots" / filename
+    # verify the output path exists
     for p in output_path.parents:
         if not p.exists():
             p.mkdir()
     plt.savefig(output_path)
-    
-def tracemalloc_peek(snapshot, key_type='lineno', limit=3):
+
+
+def tracemalloc_peek(snapshot, key_type="lineno", limit=3):
     top_stats = snapshot.statistics(key_type)
     print(f"Top {limit} lines")
     for index, stat in enumerate(top_stats[:limit], 1):
@@ -173,13 +208,15 @@ def tracemalloc_peek(snapshot, key_type='lineno', limit=3):
     print(f"Total allocated size: {total/1024:.1f} KiB")
 
 
-#Child process to monitor the memory usage of both the main process and its children
-def memory_monitor(command_queue: Queue, poll_interval=1, min_interval=10, verbose=False):
+# Child process to monitor the memory usage of both the main process and its children
+def memory_monitor(
+    command_queue: Queue, poll_interval=1, min_interval=10, verbose=False
+):
     if not verbose:
-        #Why monitor memory if you're not going to print it?
+        # Why monitor memory if you're not going to print it?
         return
     r = "\x1b[0m"
-    c_ = lambda r,g,b: f"\x1b[38;2;{r};{g};{b}m"
+    c_ = lambda r, g, b: f"\x1b[38;2;{r};{g};{b}m"
     memstr = lambda s: f"{c_(155, 155, 0)}{s}{r}"
     mprint = lambda *s: print(*(memstr(x) for x in s if isinstance(x, str)))
     monitor_start = time.time()
@@ -190,15 +227,17 @@ def memory_monitor(command_queue: Queue, poll_interval=1, min_interval=10, verbo
     ps_parent = psutil.Process(parent.pid)
     monitor_procs = [ps_parent]
 
-    usage_stats = {} #pid -> (rss, vms)
+    usage_stats = {}  # pid -> (rss, vms)
     usage_stats[parent.pid] = (0, 0)
-    def update_usage_stats(proc:psutil.Process, maxs:tuple)->tuple:
+
+    def update_usage_stats(proc: psutil.Process, maxs: tuple) -> tuple:
         try:
             mem_info = proc.memory_info()
             return (max(mem_info.rss, maxs[0]), max(mem_info.vms, maxs[1]))
         except psutil.NoSuchProcess:
             raise Exception("Process no longer exists")
-    def update_usage_stats_all(procs:list, stats:dict):
+
+    def update_usage_stats_all(procs: list, stats: dict):
         for i, p in enumerate(procs):
             try:
                 stats[p.pid] = update_usage_stats(p, stats[p.pid])
@@ -209,11 +248,13 @@ def memory_monitor(command_queue: Queue, poll_interval=1, min_interval=10, verbo
                 else:
                     mprint(f"Error updating stats for {p.pid}: {e}")
                     raise e
-    def get_summary_stats(stats:dict)->tuple:
+
+    def get_summary_stats(stats: dict) -> tuple:
         rss = sum([v[0] for v in stats.values()])
         vms = sum([v[1] for v in stats.values()])
         return rss, vms
-    def update_children(proc:psutil.Process, procs:list, stats:dict):
+
+    def update_children(proc: psutil.Process, procs: list, stats: dict):
         try:
             children = proc.children()
             for c in children:
@@ -222,7 +263,7 @@ def memory_monitor(command_queue: Queue, poll_interval=1, min_interval=10, verbo
                     stats[c.pid] = (0, 0)
         except psutil.NoSuchProcess:
             raise Exception("Process no longer exists")
-        
+
     last_max = (0, 0)
     is_gt = lambda x, y: x[0] > y[0] or x[1] > y[1]
     last_print = time.time()
@@ -251,7 +292,9 @@ def memory_monitor(command_queue: Queue, poll_interval=1, min_interval=10, verbo
             if cond_gt or cond_time:
                 rss, vms = last_max
                 mprint(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-                mprint(f"Memory usage: RSS: {rss/1024/1024:.2f} MB, VMS: {vms/1024/1024:.2f} MB")
+                mprint(
+                    f"Memory usage: RSS: {rss/1024/1024:.2f} MB, VMS: {vms/1024/1024:.2f} MB"
+                )
                 mprint(f"Duration: {time.time() - monitor_start:.2f} seconds")
                 # if snapshot is not None:
                 #     tracemalloc_peek(snapshot)
@@ -267,15 +310,16 @@ def memory_monitor(command_queue: Queue, poll_interval=1, min_interval=10, verbo
             p.terminate()
         except Exception as e:
             mprint(f"Error terminating process {p.pid}: {e}")
-    
 
-            
+
 class MemoryMonitor:
-    #Use as a context manager, create a child process to monitor memory usage
+    # Use as a context manager, create a child process to monitor memory usage
     def __init__(self, poll_interval=1):
         self.poll_interval = poll_interval
         self.command_queue = mp.Queue()
-        self.process = mp.Process(target=memory_monitor, args=(self.command_queue, self.poll_interval))
+        self.process = mp.Process(
+            target=memory_monitor, args=(self.command_queue, self.poll_interval)
+        )
         self.process.start()
 
     def stop(self):
@@ -290,9 +334,12 @@ class MemoryMonitor:
     def __exit__(self, exc_type, exc_value, traceback):
         self.stop()
 
+
 UUID = 0
+
+
 class CProfileMonitor:
-    #Use as a context manager, use the cProfile module to profile the code
+    # Use as a context manager, use the cProfile module to profile the code
     def __init__(self, name=None):
         global UUID
         if name is None:
@@ -312,6 +359,36 @@ class CProfileMonitor:
 
     def __enter__(self):
         return self
-    
+
     def __exit__(self, exc_type, exc_value, traceback):
         self.stop()
+
+
+class SampleResult(NamedTuple):
+    result_str: str
+    num_used: int
+    num_total: int
+
+
+def str_sample(iterable: Iterable, max_line_len=100, max_lines=5) -> str:
+    """str_sample
+    Return a string with a sample of the iterable
+    """
+    sample = []
+    line = ""
+    num_used = 0
+    for i, item in enumerate(iterable):
+        if len(sample) >= max_lines:
+            break
+        cur_len = len(line)
+        if cur_len + len(str(item)) > max_line_len:
+            sample.append(line + ",")
+            line = ""
+            cur_len = 0
+        if cur_len > 0:
+            line += ", "
+        line += f"{item}"
+        num_used = i
+    if len(line) > 0:
+        sample.append(line)
+    return SampleResult("\n".join(sample), num_used, len(iterable))
